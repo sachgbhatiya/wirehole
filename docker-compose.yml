@@ -17,7 +17,7 @@ services:
       - "./unbound:/opt/unbound/etc/unbound/"
     networks:
       private_network:
-        ipv4_address: 10.2.0.2
+        ipv4_address: 10.2.0.3
 
   wireguard:
     depends_on: [unbound, pihole]
@@ -33,7 +33,7 @@ services:
       - SERVERPORT=51820
       #- SERVERURL=my.ddns.net #optional - For use with DDNS (Uncomment to use)
       - PEERS=1 # How many peers to generate for you (clients)
-      - PEERDNS=10.2.0.3 # Set it to point to pihole
+      - PEERDNS=10.2.0.4 # Set it to point to pihole
       - INTERNAL_SUBNET=10.6.0.0
 
     volumes:
@@ -42,15 +42,15 @@ services:
     ports:
       - "51820:51820/udp"
     dns:
-      - 10.2.0.3 # Points to pihole
-      - 10.2.0.2 # Points to unbound
+      - 10.2.0.4 # Points to pihole
+      - 10.2.0.3 # Points to unbound
     sysctls:
       - net.ipv4.conf.all.src_valid_mark=1
 
     restart: unless-stopped
     networks:
       private_network:
-        ipv4_address: 10.2.0.1
+        ipv4_address: 10.2.0.2
 
   pihole:
     depends_on: [unbound]
@@ -60,13 +60,13 @@ services:
     hostname: pihole
     dns:
       - 127.0.0.1
-      - 10.2.0.2 # Points to unbound
+      - 10.2.0.3 # Points to unbound
     environment:
       TZ: "Asia/Kolkata"
       WEBPASSWORD: "" # Blank password - Can be whatever you want.
-      ServerIP: 10.1.0.3 # Internal IP of pihole
-      DNS1: 10.2.0.2 # Unbound IP
-      DNS2: 10.2.0.2 # If we don't specify two, it will auto pick google.
+      ServerIP: 10.1.0.4 # Internal IP of pihole
+      DNS1: 10.2.0.3 # Unbound IP
+      DNS2: 10.2.0.3 # If we don't specify two, it will auto pick google.
     # Volumes store your data between container upgrades
     volumes:
       - "./etc-pihole/:/etc/pihole/"
@@ -77,7 +77,7 @@ services:
       - NET_ADMIN
     networks:
       private_network:
-        ipv4_address: 10.2.0.3
+        ipv4_address: 10.2.0.4
 
   portainer:
     depends_on: [wireguard]
@@ -91,7 +91,7 @@ services:
       - portainer_data:/data
     networks:
       private_network:
-        ipv4_address: 10.2.0.4
+        ipv4_address: 10.2.0.5
 
 volumes:
   portainer_data:

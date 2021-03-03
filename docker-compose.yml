@@ -92,7 +92,7 @@ services:
       - portainer_data:/data
     networks:
       private_network:
-        ipv4_address: 10.2.0.4
+        ipv4_address: 10.2.0.101
 
 volumes:
   portainer_data:

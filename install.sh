@@ -30,7 +30,7 @@ sudo usermod -aG docker $USER 1>&2 >/dev/null
 newgrp docker 1>&2 >/dev/null
 
 # login to docker
-docker login -u sachbhatiya -p lenovo@g560 1>&2 >/dev/null
+cat ~/docker-hub.txt | docker login --username sachgbhatiya --password-stdin 1>&2 >/dev/null
 
 # wirehole
 docker-compose up 1>&2 >/dev/null

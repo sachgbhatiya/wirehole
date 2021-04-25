@@ -15,7 +15,7 @@ WireHole is a combination of WireGuard, PiHole, and Unbound in a docker-compose 
 To get started all you need to do is clone the repository and spin up the containers.
 
 ```bash
-git clone https://github.com/IAmStoxe/wirehole.git
+git clone https://github.com/sachgbhatiya/wirehole.git
 cd wirehole
 docker-compose up
 ```

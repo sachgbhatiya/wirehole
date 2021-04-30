@@ -12,7 +12,7 @@ services:
     depends_on: [wireguard]
     image: "mvance/unbound:latest"
     container_name: unbound
-    restart: unless-stopped
+    restart: always
     hostname: "unbound"
     volumes:
       - "./unbound:/opt/unbound/etc/unbound/"
@@ -48,7 +48,7 @@ services:
     sysctls:
       - net.ipv4.conf.all.src_valid_mark=1
 
-    restart: unless-stopped
+    restart: always
     networks:
       private_network:
         ipv4_address: 10.2.0.3
@@ -57,7 +57,7 @@ services:
     depends_on: [unbound, dnscrypt]
     container_name: pihole
     image: pihole/pihole:latest
-    restart: unless-stopped
+    restart: always
     hostname: pihole
     dns:
       - 10.2.0.4 # Points to unbound

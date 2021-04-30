@@ -9,6 +9,7 @@ networks:
 
 services:
   unbound:
+    depends_on: [wireguard]
     image: "mvance/unbound:latest"
     container_name: unbound
     restart: unless-stopped
@@ -53,7 +54,7 @@ services:
         ipv4_address: 10.2.0.3
 
   pihole:
-    depends_on: [unbound]
+    depends_on: [unbound, dnscrypt]
     container_name: pihole
     image: pihole/pihole:latest
     restart: unless-stopped
@@ -93,6 +94,15 @@ services:
     networks:
       private_network:
         ipv4_address: 10.2.0.6
+
+  dnscrypt:
+    depends_on: [wireguard]
+    container_name: dnscrypt
+    image: jedisct1/dnscrypt-server
+    restart: always
+    networks:
+      private_network:
+        ipv4_address: 10.2.0.7
 
 volumes:
   portainer_data:

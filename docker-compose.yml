@@ -9,7 +9,6 @@ networks:
 
 services:
   unbound:
-    depends_on: [wireguard]
     image: "mvance/unbound:latest"
     container_name: unbound
     restart: always
@@ -20,8 +19,44 @@ services:
       private_network:
         ipv4_address: 10.2.0.4
 
+  dnscrypt:
+    image: zydou/dnscrypt
+    container_name: dnscrypt
+    ports:
+        - 53:5353/udp
+    restart: always
+    networks:
+      private_network:
+        ipv4_address: 10.2.0.7
+
+  pihole:
+    depends_on: [unbound, dnscrypt]
+    container_name: pihole
+    image: pihole/pihole:latest
+    restart: always
+    hostname: pihole
+    environment:
+      TZ: "Asia/Kolkata"
+      WEBPASSWORD: "lenovo@g560" # Blank password - Can be whatever you want.
+      ServerIP: 10.1.0.100 # Internal IP of pihole
+      DNS1: 10.2.0.4 # Unbound IP
+      DNS2: 10.2.0.7 # dnscrypt
+    # Volumes store your data between container upgrades
+    ports:
+      - "80:80/tcp"
+    volumes:
+      - "./etc-pihole/:/etc/pihole/"
+      - "./etc-dnsmasq.d/:/etc/dnsmasq.d/"
+    # Recommended but not required (DHCP needs NET_ADMIN)
+    #   https://github.com/pi-hole/docker-pi-hole#note-on-capabilities
+    cap_add:
+      - NET_ADMIN
+    networks:
+      private_network:
+        ipv4_address: 10.2.0.5
+
   wireguard:
-    depends_on: [unbound, pihole]
+    depends_on: [pihole, unbound]
     image: linuxserver/wireguard
     container_name: wireguard
     cap_add:
@@ -53,33 +88,6 @@ services:
       private_network:
         ipv4_address: 10.2.0.3
 
-  pihole:
-    depends_on: [unbound, dnscrypt]
-    container_name: pihole
-    image: pihole/pihole:latest
-    restart: always
-    hostname: pihole
-    dns:
-      - 10.2.0.4 # Points to unbound
-      - 127.0.0.1
-    environment:
-      TZ: "Asia/Kolkata"
-      WEBPASSWORD: "lenovo@g560" # Blank password - Can be whatever you want.
-      ServerIP: 10.1.0.100 # Internal IP of pihole
-      DNS1: 10.2.0.4 # Unbound IP
-      DNS2: 10.2.0.4 # If we don't specify two, it will auto pick google.
-    # Volumes store your data between container upgrades
-    volumes:
-      - "./etc-pihole/:/etc/pihole/"
-      - "./etc-dnsmasq.d/:/etc/dnsmasq.d/"
-    # Recommended but not required (DHCP needs NET_ADMIN)
-    #   https://github.com/pi-hole/docker-pi-hole#note-on-capabilities
-    cap_add:
-      - NET_ADMIN
-    networks:
-      private_network:
-        ipv4_address: 10.2.0.5
-
   portainer:
     depends_on: [wireguard]
     container_name: portainer
@@ -94,15 +102,6 @@ services:
     networks:
       private_network:
         ipv4_address: 10.2.0.6
-
-  dnscrypt:
-    depends_on: [wireguard]
-    container_name: dnscrypt
-    image: jedisct1/dnscrypt-server
-    restart: always
-    networks:
-      private_network:
-        ipv4_address: 10.2.0.7
 
 volumes:
   portainer_data:

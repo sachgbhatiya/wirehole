@@ -24,6 +24,8 @@ services:
     container_name: dnscrypt
     ports:
         - 53:5353/udp
+    volumes:
+      - "./dnscrypt-proxy.toml:/etc/dnscrypt-proxy/dnscrypt-proxy.toml"
     restart: always
     networks:
       private_network:
@@ -35,6 +37,9 @@ services:
     image: pihole/pihole:latest
     restart: always
     hostname: pihole
+    dns:
+      - 10.2.0.4
+      - 10.2.0.7
     environment:
       TZ: "Asia/Kolkata"
       WEBPASSWORD: "lenovo@g560" # Blank password - Can be whatever you want.

@@ -2,3 +2,8 @@
 portainer.yml
 *.iml
 *.xml
+unbound/dev
+unbound/var
+etc-dnsmasq.d
+etc-pihole
+wireguard

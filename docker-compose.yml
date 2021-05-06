@@ -11,10 +11,10 @@ services:
   unbound:
     image: "mvance/unbound:latest"
     container_name: unbound
-    restart: unless-stopped
+    restart: always
     hostname: "unbound"
     volumes:
-      - "./unbound:/opt/unbound/etc/unbound/"
+      - "unbound_data:/opt/unbound/etc/unbound/"
     networks:
       private_network:
         ipv4_address: 10.2.0.4
@@ -31,14 +31,14 @@ services:
       - PGID=1000
       - TZ=Asia/Kolkata # Change to your timezone
       - SERVERPORT=51820
-      - SERVERURL=oracle-wirehole-s.duckdns.org #optional - For use with DDNS (Uncomment to use)
+      - SERVERURL=oracle-wirehole.duckdns.org #optional - For use with DDNS (Uncomment to use)
       - PEERS=1 # How many peers to generate for you (clients)
       - PEERDNS=10.2.0.5 # Set it to point to pihole
       - INTERNAL_SUBNET=10.6.0.0
 
     volumes:
-      - ./wireguard:/config
-      - /lib/modules:/lib/modules
+      - wirehole_data:/config
+      - wirehole_data:/lib/modules
     ports:
       - "51820:51820/udp"
     dns:
@@ -47,7 +47,7 @@ services:
     sysctls:
       - net.ipv4.conf.all.src_valid_mark=1
 
-    restart: unless-stopped
+    restart: always
     networks:
       private_network:
         ipv4_address: 10.2.0.3
@@ -58,19 +58,22 @@ services:
     image: pihole/pihole:latest
     restart: unless-stopped
     hostname: pihole
+    ports:
+      - "80:80"
     dns:
-      - 10.2.0.4 # Points to unbound
       - 127.0.0.1
+      - 10.2.0.4 # Points to unbound
     environment:
       TZ: "Asia/Kolkata"
-      WEBPASSWORD: "lenovo@g560" # Blank password - Can be whatever you want.
+      WEBPASSWORD: "" # Blank password - Can be whatever you want.
       ServerIP: 10.1.0.100 # Internal IP of pihole
       DNS1: 10.2.0.4 # Unbound IP
       DNS2: 10.2.0.4 # If we don't specify two, it will auto pick google.
+      DNSSEC: "true"
     # Volumes store your data between container upgrades
     volumes:
-      - "./etc-pihole/:/etc/pihole/"
-      - "./etc-dnsmasq.d/:/etc/dnsmasq.d/"
+      - "pihole_data:/etc/pihole/"
+      - "/etc-dnsmasq.d:/etc/dnsmasq.d/"
     # Recommended but not required (DHCP needs NET_ADMIN)
     #   https://github.com/pi-hole/docker-pi-hole#note-on-capabilities
     cap_add:
@@ -95,4 +98,27 @@ services:
         ipv4_address: 10.2.0.6
 
 volumes:
+  unbound_data:
+    driver: local
+    driver_opts:
+       o: bind
+       type: none
+       device: /home/ubuntu/wirehole/volumes/unbound
+  wirehole_data:
+    driver: local
+    driver_opts:
+       o: bind
+       type: none
+       device: /home/ubuntu/wirehole/volumes/wireguard
+  pihole_data:
+    driver: local
+    driver_opts:
+       o: bind
+       type: none
+       device: /home/ubuntu/wirehole/volumes/wireguard
   portainer_data:
+    driver: local
+    driver_opts:
+      o: bind
+      type: none
+      device: /home/ubuntu/wirehole/volumes/portainer

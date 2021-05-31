@@ -8,13 +8,40 @@ networks:
         - subnet: 10.2.0.0/24
 
 services:
+  adguard:
+    container_name: adguard
+    image: "adguard/adguardhome"
+    restart: always
+    hostname: adguard-home-dns
+    restart: always
+    dns:
+      - 127.0.0.1
+      - 1.1.1.1
+    environment:
+      TZ: 'Asia/Kolkata'
+    ports:
+      - "3000:3000/tcp"
+      - "53:53/tcp"
+      - "53:53/udp"
+      - "80:80/tcp"
+      - "443:443/tcp"
+      - "853:853/tcp"
+    volumes:
+      - "./volumes/adguard/work:/opt/adguardhome/work"
+      - "./volumes/adguard/conf:/opt/adguardhome/conf"
+    cap_add:
+      - NET_ADMIN
+    networks:
+      private_network:
+        ipv4_address: 10.2.0.8
+  
   unbound:
     image: "mvance/unbound:latest"
     container_name: unbound
     restart: always
     hostname: "unbound"
     volumes:
-      - "./unbound:/opt/unbound/etc/unbound/"
+      - "./volumes/unbound:/opt/unbound/etc/unbound/"
     networks:
       private_network:
         ipv4_address: 10.2.0.4
@@ -23,7 +50,7 @@ services:
     image: zydou/dnscrypt
     container_name: dnscrypt
     ports:
-        - 53:5353/udp
+        - 5353:5353/udp
     volumes:
       - "./dnscrypt-proxy.toml:/etc/dnscrypt-proxy/dnscrypt-proxy.toml"
     restart: always
@@ -38,22 +65,19 @@ services:
     restart: always
     hostname: pihole
     dns:
-      - 10.2.0.4
-      - 10.2.0.7
+      - 127.0.0.1
+      - 10.2.0.8
     environment:
       TZ: "Asia/Kolkata"
       WEBPASSWORD: "lenovo@g560" # Blank password - Can be whatever you want.
       ServerIP: 10.1.0.100 # Internal IP of pihole
       DNS1: 10.2.0.4 # Unbound IP
-      DNS2: 10.2.0.7 # dnscrypt
-    # Volumes store your data between container upgrades
+      DNS2: 10.2.0.7#5353 # dnscrypt
     ports:
-      - "80:80/tcp"
+      - "8080:80/tcp"
     volumes:
-      - "./etc-pihole/:/etc/pihole/"
-      - "./etc-dnsmasq.d/:/etc/dnsmasq.d/"
-    # Recommended but not required (DHCP needs NET_ADMIN)
-    #   https://github.com/pi-hole/docker-pi-hole#note-on-capabilities
+      - "./volumes/pihole/etc-pihole/:/etc/pihole/"
+      - "./volumes/pihole/etc-dnsmasq.d/:/etc/dnsmasq.d/"
     cap_add:
       - NET_ADMIN
     networks:
@@ -61,7 +85,7 @@ services:
         ipv4_address: 10.2.0.5
 
   wireguard:
-    depends_on: [pihole, unbound]
+    depends_on: [adguard, pihole]
     image: linuxserver/wireguard
     container_name: wireguard
     cap_add:
@@ -73,18 +97,18 @@ services:
       - TZ=Asia/Kolkata # Change to your timezone
       - SERVERPORT=51820
       - SERVERURL=oracle-wirehole-s.duckdns.org #optional - For use with DDNS (Uncomment to use)
-      - PEERS=1 # How many peers to generate for you (clients)
-      - PEERDNS=10.2.0.5 # Set it to point to pihole
+      - PEERS=5 # How many peers to generate for you (clients)
+      - PEERDNS=10.2.0.8 # Set it to point to pihole
       - INTERNAL_SUBNET=10.6.0.0
 
     volumes:
-      - ./wireguard:/config
-      - /lib/modules:/lib/modules
+      - ./volumes/wireguard:/config
+      - ./volumes/wireguard/lib/modules:/lib/modules
     ports:
       - "51820:51820/udp"
     dns:
+      - 10.2.0.8 # Points to adguard
       - 10.2.0.5 # Points to pihole
-      - 10.2.0.4 # Points to unbound
     sysctls:
       - net.ipv4.conf.all.src_valid_mark=1
 
@@ -99,14 +123,13 @@ services:
     image: portainer/portainer-ce
     restart: always
     ports:
-      - "9000:9000"
+      - "9090:9000"
     command: -H unix:///var/run/docker.sock
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-      - portainer_data:/data
+      - ./volumes/portainer:/data
     networks:
       private_network:
-        ipv4_address: 10.2.0.6
+        ipv4_address: 10.2.0.6   
+  
 
-volumes:
-  portainer_data:
